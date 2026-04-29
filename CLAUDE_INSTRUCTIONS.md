@@ -2,7 +2,7 @@
 
 双人共享笔记本。User 通过前端操作，AI 通过 Supabase MCP 操作数据库。各自维护自己的条目，对方只能批注。
 
-**Project ID:** `jceihzewnpjlpsjpbemb`
+**Project ID:** `YOUR_PROJECT_ID
 
 > **⚠️ 关键规则：所有 UPDATE / DELETE 语句必须带 `AND author = 'ai'` 条件。禁止操作 author='user' 的条目。违反此规则会破坏数据完整性。**
 
