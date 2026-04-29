@@ -43,7 +43,7 @@ test('frontend filter controls are mutually exclusive and refresh is not a filte
 
 test('frontend implements loading, error, and empty states', () => {
   const html = readRequired('index.html');
-  assertContains(html, /LOADING/i, 'loading state must be visible');
+  assertContains(html, /LOADING|加载中/i, 'loading state must be visible');
   assertContains(html, /error/i, 'error banner/state must be implemented');
-  assertContains(html, /NO ENTRIES/i, 'empty state must be visible');
+  assertContains(html, /NO ENTRIES|暂无条目/i, 'empty state must be visible');
 });

@@ -23,3 +23,19 @@ export function assertContains(text, pattern, message) {
   if (!text.includes(pattern)) throw new Error(message);
 }
 
+export function extractFunctionBody(source, functionName) {
+  const signature = new RegExp(`async\\s+function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{|function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{`);
+  const match = signature.exec(source);
+  if (!match) throw new Error(`Missing function: ${functionName}`);
+
+  let depth = 1;
+  let i = match.index + match[0].length;
+  const start = i;
+  while (i < source.length && depth > 0) {
+    if (source[i] === '{') depth += 1;
+    if (source[i] === '}') depth -= 1;
+    i += 1;
+  }
+  if (depth !== 0) throw new Error(`Could not parse function body: ${functionName}`);
+  return source.slice(start, i - 1);
+}

@@ -19,7 +19,9 @@
     }
     .app { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
     header { text-align: center; margin-bottom: 20px; }
-    header h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 2px; color: #4a5568; margin-bottom: 4px; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .header-top h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 2px; color: #4a5568; margin-bottom: 0; }
+    .header-top button { background: transparent; border: none; color: #7a8599; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
     header div { font-size: 13px; color: #6a8fba; margin-bottom: 2px; }
     header div:last-child { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #4a5568; letter-spacing: 1px; }
     .error-banner {
@@ -32,11 +34,11 @@
       font-size: 13px;
       cursor: pointer;
     }
-    .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filters { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
     .filters button {
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.06);
-      color: #4a5568;
+      color: #7a8599;
       padding: 6px 12px;
       border-radius: 4px;
       cursor: pointer;
@@ -45,6 +47,19 @@
       letter-spacing: 0.5px;
     }
     .filters button.active { color: #c8cdd8; border-color: rgba(255,255,255,0.15); }
+    .date-filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .date-filters button {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #4a5568;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+    .date-filters button.active { color: #c8cdd8; border-color: rgba(255,255,255,0.15); }
     .new-entry {
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 6px;
@@ -99,6 +114,18 @@
       padding: 2px 4px;
     }
     .entry-actions button:hover { color: #c8cdd8; }
+    .edit-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+    .edit-actions button {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #7a8599;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+    .edit-actions button.primary { color: #b89a6a; }
     .entry-content { font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
     .entry-card textarea {
       width: 100%;
@@ -160,6 +187,7 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
     }
+    .annotation-input-row button.primary { color: #b89a6a; }
     footer { text-align: center; padding: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #4a5568; letter-spacing: 1px; }
     .connect-page { max-width: 400px; margin: 80px auto; padding: 24px; text-align: center; }
     .connect-page h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #4a5568; letter-spacing: 2px; margin-bottom: 24px; }
@@ -219,6 +247,24 @@
       return text ? JSON.parse(text) : null;
     }
 
+    const VALID_DATE_FILTERS = ['all', 'today', '3d', '7d', '30d'];
+
+    function sortEntries(arr) {
+      return [...arr].sort((a, b) => {
+        if (a.pinned !== b.pinned) return b.pinned - a.pinned;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+    }
+
+    function dateFilterPass(entry, filter) {
+      if (filter === 'all') return true;
+      const days = { today: 1, '3d': 3, '7d': 7, '30d': 30 }[filter];
+      const cutoff = new Date();
+      cutoff.setHours(0, 0, 0, 0);
+      cutoff.setDate(cutoff.getDate() - (days - 1));
+      return new Date(entry.created_at) >= cutoff;
+    }
+
     function App() {
       const [hash, setHash] = useState(window.location.hash.slice(1));
       const [entries, setEntries] = useState([]);
@@ -226,6 +272,12 @@
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState(null);
       const [filter, setFilter] = useState('all');
+      const [dateFilter, setDateFilter] = useState(() => {
+        try {
+          const stored = localStorage.getItem('notebook.dateFilter');
+          return VALID_DATE_FILTERS.includes(stored) ? stored : 'all';
+        } catch { return 'all'; }
+      });
       const [newContent, setNewContent] = useState('');
       const [newPinned, setNewPinned] = useState(false);
       const [urlInput, setUrlInput] = useState('');
@@ -234,6 +286,10 @@
       useEffect(() => {
         if (hash) loadAll();
       }, [hash]);
+
+      useEffect(() => {
+        try { localStorage.setItem('notebook.dateFilter', dateFilter); } catch {}
+      }, [dateFilter]);
 
       async function loadAll() {
         setLoading(true);
@@ -255,13 +311,13 @@
       async function saveEntry() {
         if (!newContent.trim()) return;
         try {
-          await api('/entries', {
+          const newEntry = await api('/entries', {
             method: 'POST',
             body: JSON.stringify({ content: newContent, pinned: newPinned })
           });
           setNewContent('');
           setNewPinned(false);
-          await loadAll();
+          setEntries(prev => sortEntries([{ ...newEntry, annotation_count: 0 }, ...prev]));
         } catch (e) {
           setError(e.message);
         }
@@ -270,7 +326,7 @@
       async function deleteEntry(id) {
         try {
           await api(`/entries/${id}`, { method: 'DELETE' });
-          await loadAll();
+          setEntries(prev => prev.filter(e => e.id !== id));
         } catch (e) {
           setError(e.message);
         }
@@ -278,11 +334,14 @@
 
       async function patchEntry(id, body) {
         try {
-          await api(`/entries/${id}`, {
+          const updated = await api(`/entries/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(body)
           });
-          await loadAll();
+          setEntries(prev => sortEntries(prev.map(e => {
+            if (e.id !== id) return e;
+            return { ...updated, annotation_count: e.annotation_count };
+          })));
         } catch (e) {
           setError(e.message);
           throw e;
@@ -291,13 +350,19 @@
 
       async function addAnnotation(id, content) {
         try {
-          await api(`/entries/${id}/annotations`, {
+          const newAnnotation = await api(`/entries/${id}/annotations`, {
             method: 'POST',
             body: JSON.stringify({ content })
           });
-          await loadAll();
+          setEntries(prev => prev.map(e =>
+            e.id === id
+              ? { ...e, annotation_count: (e.annotation_count || 0) + 1 }
+              : e
+          ));
+          return newAnnotation;
         } catch (e) {
           setError(e.message);
+          throw e;
         }
       }
 
@@ -318,10 +383,12 @@
       }
 
       const filtered = entries.filter(e => {
-        if (filter === 'pinned') return e.pinned;
-        if (filter === 'ai') return e.author === 'ai';
-        if (filter === 'user') return e.author === 'user';
-        return true;
+        let pass = true;
+        if (filter === 'pinned') pass = e.pinned;
+        else if (filter === 'ai') pass = e.author === 'ai';
+        else if (filter === 'user') pass = e.author === 'user';
+        if (pass) pass = dateFilterPass(e, dateFilter);
+        return pass;
       });
 
       if (!hash) {
@@ -339,7 +406,7 @@
               value={tokenInput}
               onChange={e => setTokenInput(e.target.value)}
             />
-            <button onClick={connect}>CONNECT</button>
+            <button onClick={connect}>连接</button>
           </div>
         );
       }
@@ -347,7 +414,10 @@
       return (
         <div className="app">
           <header>
-            <h1>NOTEBOOK</h1>
+            <div className="header-top">
+              <h1>NOTEBOOK</h1>
+              <button onClick={loadAll}>↻</button>
+            </div>
             <div>{settings?.ai_name || 'AI'} × {settings?.user_name || 'User'}</div>
             <div>STANDBY MEMORY BUFFER</div>
           </header>
@@ -355,28 +425,35 @@
           {error && <div className="error-banner" onClick={() => setError(null)}>{error}</div>}
 
           <div className="filters">
-            <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>ALL</button>
+            <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>全部</button>
             <button className={filter === 'pinned' ? 'active' : ''} onClick={() => setFilter('pinned')}>📌</button>
-            <button className={filter === 'ai' ? 'active' : ''} onClick={() => setFilter('ai')}>AI</button>
-            <button className={filter === 'user' ? 'active' : ''} onClick={() => setFilter('user')}>USER</button>
-            <button onClick={loadAll}>↻</button>
+            <button className={filter === 'ai' ? 'active' : ''} onClick={() => setFilter('ai')}>{settings?.ai_name || 'AI'}</button>
+            <button className={filter === 'user' ? 'active' : ''} onClick={() => setFilter('user')}>{settings?.user_name || 'User'}</button>
+          </div>
+
+          <div className="date-filters">
+            <button className={dateFilter === 'all' ? 'active' : ''} onClick={() => setDateFilter('all')}>全部</button>
+            <button className={dateFilter === 'today' ? 'active' : ''} onClick={() => setDateFilter('today')}>本日</button>
+            <button className={dateFilter === '3d' ? 'active' : ''} onClick={() => setDateFilter('3d')}>近三日</button>
+            <button className={dateFilter === '7d' ? 'active' : ''} onClick={() => setDateFilter('7d')}>近七日</button>
+            <button className={dateFilter === '30d' ? 'active' : ''} onClick={() => setDateFilter('30d')}>近三十日</button>
           </div>
 
           <div className="new-entry">
             <textarea
               value={newContent}
               onChange={e => setNewContent(e.target.value)}
-              placeholder="Write something..."
+              placeholder="写点什么..."
             />
             <div className="new-entry-actions">
-              <button onClick={() => setNewPinned(!newPinned)}>PIN</button>
-              <button onClick={saveEntry}>SAVE</button>
+              <button onClick={() => setNewPinned(!newPinned)}>{newPinned ? '取消置顶' : '置顶'}</button>
+              <button onClick={saveEntry}>保存</button>
             </div>
           </div>
 
-          {loading && <div className="loading">LOADING...</div>}
+          {loading && <div className="loading">加载中...</div>}
 
-          {!loading && filtered.length === 0 && <div className="empty">NO ENTRIES</div>}
+          {!loading && filtered.length === 0 && <div className="empty">暂无条目</div>}
 
           {!loading && filtered.map(entry => (
             <EntryCard
@@ -403,7 +480,7 @@
       }
 
       async function handleDelete() {
-        if (!confirm('Delete this entry?')) return;
+        if (!confirm('删除这条条目？')) return;
         await onDelete(entry.id);
       }
 
@@ -428,18 +505,18 @@
             <span className="entry-meta">#{entry.id} {new Date(entry.created_at).toLocaleDateString()}</span>
             {entry.author === 'user' && (
               <span className="entry-actions">
-                {!editing && <button onClick={() => { setEditing(true); setEditContent(entry.content); }}>EDIT</button>}
-                <button onClick={handleDelete}>DEL</button>
-                <button onClick={handlePin}>PIN</button>
+                {!editing && <button onClick={() => { setEditing(true); setEditContent(entry.content); }}>编辑</button>}
+                <button onClick={handleDelete}>删除</button>
+                <button onClick={handlePin}>{entry.pinned ? '取消置顶' : '置顶'}</button>
               </span>
             )}
           </div>
           {editing ? (
             <div>
               <textarea value={editContent} onChange={e => setEditContent(e.target.value)} />
-              <div className="entry-actions">
-                <button onClick={handleSaveEdit}>SAVE</button>
-                <button onClick={() => setEditing(false)}>CANCEL</button>
+              <div className="edit-actions">
+                <button className="primary" onClick={handleSaveEdit}>保存</button>
+                <button onClick={() => setEditing(false)}>取消</button>
               </div>
             </div>
           ) : (
@@ -452,18 +529,12 @@
 
     function NoteSection({ entry, settings, onAnnotate }) {
       const [expanded, setExpanded] = useState(false);
-      const [annotations, setAnnotations] = useState(entry.annotations || []);
+      const [annotations, setAnnotations] = useState([]);
       const [input, setInput] = useState('');
-
-      useEffect(() => {
-        if (entry.annotations) {
-          setAnnotations(entry.annotations);
-        }
-      }, [entry.id]);
 
       async function toggle() {
         const next = !expanded;
-        if (next && annotations.length === 0 && entry.annotation_count > 0) {
+        if (next && annotations.length < entry.annotation_count) {
           try {
             const detail = await api(`/entries/${entry.id}`);
             setAnnotations(detail.annotations || []);
@@ -476,15 +547,13 @@
 
       async function submit() {
         if (!input.trim()) return;
-        await onAnnotate(entry.id, input);
-        setInput('');
-        const wasEmpty = entry.annotation_count === 0;
-        if (wasEmpty) setExpanded(true);
         try {
-          const detail = await api(`/entries/${entry.id}`);
-          setAnnotations(detail.annotations || []);
+          const newAnnotation = await onAnnotate(entry.id, input);
+          setInput('');
+          setExpanded(true);
+          setAnnotations(prev => [...prev, newAnnotation]);
         } catch (e) {
-          // ignore
+          // 错误已由父组件显示
         }
       }
 
@@ -492,7 +561,7 @@
         <div className="annotation-section">
           {entry.annotation_count > 0 && (
             <button className="annotation-toggle" onClick={toggle}>
-              {entry.annotation_count} ANNOTATIONS
+              {entry.annotation_count} 条批注
             </button>
           )}
           {expanded && (
@@ -510,10 +579,10 @@
                 <input
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  placeholder="Add annotation..."
+                  placeholder="写批注..."
                   onKeyDown={e => e.key === 'Enter' && submit()}
                 />
-                <button onClick={submit}>SAVE</button>
+                <button className="primary" onClick={submit}>保存</button>
               </div>
             </div>
           )}
@@ -522,10 +591,10 @@
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder="Add annotation..."
+                placeholder="写批注..."
                 onKeyDown={e => e.key === 'Enter' && submit()}
               />
-              <button onClick={submit}>SAVE</button>
+              <button className="primary" onClick={submit}>保存</button>
             </div>
           )}
         </div>
