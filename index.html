@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notebook</title>
+  <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -60,6 +61,18 @@
       letter-spacing: 0.5px;
     }
     .date-filters button.active { color: #c8cdd8; border-color: rgba(255,255,255,0.15); }
+    .search-box {
+      width: 100%;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #c8cdd8;
+      font-family: 'Noto Sans SC', 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      outline: none;
+    }
     .new-entry {
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 6px;
@@ -110,8 +123,8 @@
       color: #4a5568;
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      padding: 2px 4px;
+      font-size: 11px;
+      padding: 4px 8px;
     }
     .entry-actions button:hover { color: #c8cdd8; }
     .edit-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
@@ -162,7 +175,8 @@
       flex-direction: column;
       gap: 2px;
     }
-    .annotation-author { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6a8fba; }
+    .annotation-author-ai { color: #6a8fba; }
+    .annotation-author-user { color: #b89a6a; }
     .annotation-content { color: #c8cdd8; line-height: 1.5; }
     .annotation-time { font-size: 10px; color: #4a5568; }
     .annotation-input-row { display: flex; gap: 8px; margin-top: 8px; }
@@ -215,25 +229,102 @@
       font-size: 12px;
       letter-spacing: 1px;
     }
+    .connect-page .hint {
+      font-size: 11px;
+      color: #4a5568;
+      text-align: left;
+      margin-top: -8px;
+      margin-bottom: 12px;
+    }
+    .lang-toggle { display: inline-flex; align-items: center; gap: 4px; }
+    .lang-toggle button {
+      background: transparent; border: none;
+      color: #4a5568;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 2px 4px;
+    }
+    .lang-toggle button.active { color: #c8cdd8; }
+    .lang-divider { color: #4a5568; font-size: 11px; }
+    @media (max-width: 600px) {
+      .entry-actions button { padding: 6px 10px; font-size: 12px; }
+      .filters button { padding: 8px 14px; }
+      .date-filters button { padding: 8px 14px; }
+      .edit-actions button,
+      .annotation-input-row button,
+      .new-entry-actions button { padding: 8px 14px; }
+      .new-entry textarea,
+      .entry-card textarea,
+      .annotation-input-row input,
+      .connect-page input,
+      .search-box { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div style="text-align: center; padding: 80px 20px; color: #4a5568;
+                font-family: 'JetBrains Mono', monospace; font-size: 11px;
+                letter-spacing: 2px;">
+      ── BOOT SEQUENCE ──<br><br>
+      LOADING MEMORY BUFFER...
+    </div>
+  </div>
   <script type="text/babel">
     const { useState, useEffect } = React;
+
+    const STRINGS = {
+      zh: {
+        all: '全部', today: '本日', '3d': '近三日', '7d': '近七日', '30d': '近三十日',
+        save: '保存', cancel: '取消', edit: '编辑', delete: '删除',
+        pin: '置顶', unpin: '取消置顶', connect: '连接',
+        writePlaceholder: '写点什么...',
+        annotationPlaceholder: '写批注...',
+        searchPlaceholder: '搜索内容...',
+        loading: '加载中...', empty: '暂无条目',
+        annotationsCount: n => `${n} 条批注`,
+        deleteConfirm: '删除这条条目？',
+        refreshTooltip: '刷新', exportTooltip: '导出',
+        connectionFailed: '连接失败：',
+        tokenLabel: 'API Token (可选)',
+        urlHint: '只需 Supabase 项目 URL，会自动拼接 Edge Function 路径',
+        exportTitle: 'Notebook 导出',
+        exportAnnotations: '**批注：**',
+      },
+      en: {
+        all: 'All', today: 'Today', '3d': '3 days', '7d': '7 days', '30d': '30 days',
+        save: 'Save', cancel: 'Cancel', edit: 'Edit', delete: 'Delete',
+        pin: 'Pin', unpin: 'Unpin', connect: 'Connect',
+        writePlaceholder: 'Write something...',
+        annotationPlaceholder: 'Add annotation...',
+        searchPlaceholder: 'Search...',
+        loading: 'Loading...', empty: 'No entries',
+        annotationsCount: n => `${n} annotation${n === 1 ? '' : 's'}`,
+        deleteConfirm: 'Delete this entry?',
+        refreshTooltip: 'Refresh', exportTooltip: 'Export',
+        connectionFailed: 'Connection failed: ',
+        tokenLabel: 'API Token (optional)',
+        urlHint: 'Project URL only — Edge Function path is auto-appended',
+        exportTitle: 'Notebook Export',
+        exportAnnotations: '**Annotations:**',
+      }
+    };
+
+    const VALID_LANGS = ['zh', 'en'];
 
     function getCredentials() {
       const hash = window.location.hash.slice(1);
       const [url, token] = hash.split('|');
-      return [url, token];
+      return [url, token || ''];
     }
 
     async function api(path, options = {}) {
       const [baseUrl, token] = getCredentials();
-      if (!baseUrl || !token) throw new Error('Not connected');
+      if (!baseUrl) throw new Error('Not connected');
       const headers = {
         'Content-Type': 'application/json',
-        'X-Notebook-Token': token
+        ...(token ? { 'X-Notebook-Token': token } : {})
       };
       const res = await fetch(baseUrl + path, { ...options, headers });
       if (res.status === 401) throw new Error('Unauthorized');
@@ -278,10 +369,18 @@
           return VALID_DATE_FILTERS.includes(stored) ? stored : 'all';
         } catch { return 'all'; }
       });
+      const [lang, setLang] = useState(() => {
+        try {
+          const stored = localStorage.getItem('notebook.lang');
+          return VALID_LANGS.includes(stored) ? stored : 'zh';
+        } catch { return 'zh'; }
+      });
+      const [searchQuery, setSearchQuery] = useState('');
       const [newContent, setNewContent] = useState('');
       const [newPinned, setNewPinned] = useState(false);
       const [urlInput, setUrlInput] = useState('');
       const [tokenInput, setTokenInput] = useState('');
+      const t = STRINGS[lang];
 
       useEffect(() => {
         if (hash) loadAll();
@@ -290,6 +389,10 @@
       useEffect(() => {
         try { localStorage.setItem('notebook.dateFilter', dateFilter); } catch {}
       }, [dateFilter]);
+
+      useEffect(() => {
+        try { localStorage.setItem('notebook.lang', lang); } catch {}
+      }, [lang]);
 
       async function loadAll() {
         setLoading(true);
@@ -370,16 +473,53 @@
         const base = urlInput.replace(/\/$/, '');
         const fullUrl = base.endsWith('/notebook-api') ? base : `${base}/functions/v1/notebook-api`;
         try {
-          const res = await fetch(`${fullUrl}/entries`, {
-            headers: { 'X-Notebook-Token': tokenInput }
-          });
+          const headers = tokenInput ? { 'X-Notebook-Token': tokenInput } : {};
+          const res = await fetch(`${fullUrl}/entries`, { headers });
           if (!res.ok) throw new Error('Check URL and token');
           const hashValue = `${fullUrl}|${tokenInput}`;
           window.location.hash = hashValue;
           setHash(hashValue);
         } catch (e) {
-          setError('Connection failed: ' + e.message);
+          setError(t.connectionFailed + e.message);
         }
+      }
+
+      async function exportMarkdown() {
+        try {
+          const fullEntries = await api('/entries?include=annotations');
+          const md = generateMarkdown(fullEntries, settings, t);
+          const filename = `notebook-${new Date().toISOString().slice(0, 10)}.md`;
+          downloadFile(filename, md, 'text/markdown');
+        } catch (e) { setError(e.message); }
+      }
+
+      function generateMarkdown(entries, settings, t) {
+        const lines = [`# ${t.exportTitle} · ${new Date().toLocaleDateString()}`, ''];
+        for (const e of entries) {
+          const author = e.author === 'ai' ? (settings?.ai_name || 'AI') : (settings?.user_name || 'User');
+          const date = new Date(e.created_at).toLocaleString();
+          const pin = e.pinned ? ' · 📌' : '';
+          lines.push(`## #${e.id} · ${author}${pin} · ${date}`, '', e.content, '');
+          if (e.annotations?.length) {
+            lines.push(t.exportAnnotations, '');
+            for (const a of e.annotations) {
+              const aAuthor = a.author === 'ai' ? (settings?.ai_name || 'AI') : (settings?.user_name || 'User');
+              const aDate = new Date(a.created_at).toLocaleString();
+              lines.push(`- **${aAuthor}** (${aDate}): ${a.content}`);
+            }
+            lines.push('');
+          }
+          lines.push('---', '');
+        }
+        return lines.join('\n');
+      }
+
+      function downloadFile(filename, content, mime) {
+        const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
       }
 
       const filtered = entries.filter(e => {
@@ -388,6 +528,10 @@
         else if (filter === 'ai') pass = e.author === 'ai';
         else if (filter === 'user') pass = e.author === 'user';
         if (pass) pass = dateFilterPass(e, dateFilter);
+        if (pass && searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          pass = e.content.toLowerCase().includes(q);
+        }
         return pass;
       });
 
@@ -397,16 +541,17 @@
             <h1>NOTEBOOK</h1>
             {error && <div className="error-banner" onClick={() => setError(null)}>{error}</div>}
             <input
-              placeholder="Supabase Project URL"
+              placeholder="https://xxx.supabase.co"
               value={urlInput}
               onChange={e => setUrlInput(e.target.value)}
             />
+            <div className="hint">{t.urlHint}</div>
             <input
-              placeholder="API Token"
+              placeholder={t.tokenLabel}
               value={tokenInput}
               onChange={e => setTokenInput(e.target.value)}
             />
-            <button onClick={connect}>连接</button>
+            <button onClick={connect}>{t.connect}</button>
           </div>
         );
       }
@@ -416,7 +561,15 @@
           <header>
             <div className="header-top">
               <h1>NOTEBOOK</h1>
-              <button onClick={loadAll}>↻</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="lang-toggle">
+                  <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
+                  <span className="lang-divider">|</span>
+                  <button className={lang === 'zh' ? 'active' : ''} onClick={() => setLang('zh')}>中文</button>
+                </div>
+                <button title={t.refreshTooltip} onClick={loadAll}>↻</button>
+                <button title={t.exportTooltip} onClick={exportMarkdown}>⬇</button>
+              </div>
             </div>
             <div>{settings?.ai_name || 'AI'} × {settings?.user_name || 'User'}</div>
             <div>STANDBY MEMORY BUFFER</div>
@@ -425,35 +578,42 @@
           {error && <div className="error-banner" onClick={() => setError(null)}>{error}</div>}
 
           <div className="filters">
-            <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>全部</button>
+            <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>{t.all}</button>
             <button className={filter === 'pinned' ? 'active' : ''} onClick={() => setFilter('pinned')}>📌</button>
             <button className={filter === 'ai' ? 'active' : ''} onClick={() => setFilter('ai')}>{settings?.ai_name || 'AI'}</button>
             <button className={filter === 'user' ? 'active' : ''} onClick={() => setFilter('user')}>{settings?.user_name || 'User'}</button>
           </div>
 
           <div className="date-filters">
-            <button className={dateFilter === 'all' ? 'active' : ''} onClick={() => setDateFilter('all')}>全部</button>
-            <button className={dateFilter === 'today' ? 'active' : ''} onClick={() => setDateFilter('today')}>本日</button>
-            <button className={dateFilter === '3d' ? 'active' : ''} onClick={() => setDateFilter('3d')}>近三日</button>
-            <button className={dateFilter === '7d' ? 'active' : ''} onClick={() => setDateFilter('7d')}>近七日</button>
-            <button className={dateFilter === '30d' ? 'active' : ''} onClick={() => setDateFilter('30d')}>近三十日</button>
+            <button className={dateFilter === 'all' ? 'active' : ''} onClick={() => setDateFilter('all')}>{t.all}</button>
+            <button className={dateFilter === 'today' ? 'active' : ''} onClick={() => setDateFilter('today')}>{t.today}</button>
+            <button className={dateFilter === '3d' ? 'active' : ''} onClick={() => setDateFilter('3d')}>{t['3d']}</button>
+            <button className={dateFilter === '7d' ? 'active' : ''} onClick={() => setDateFilter('7d')}>{t['7d']}</button>
+            <button className={dateFilter === '30d' ? 'active' : ''} onClick={() => setDateFilter('30d')}>{t['30d']}</button>
           </div>
+
+          <input
+            className="search-box"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={t.searchPlaceholder}
+          />
 
           <div className="new-entry">
             <textarea
               value={newContent}
               onChange={e => setNewContent(e.target.value)}
-              placeholder="写点什么..."
+              placeholder={t.writePlaceholder}
             />
             <div className="new-entry-actions">
-              <button onClick={() => setNewPinned(!newPinned)}>{newPinned ? '取消置顶' : '置顶'}</button>
-              <button onClick={saveEntry}>保存</button>
+              <button onClick={() => setNewPinned(!newPinned)}>{newPinned ? t.unpin : t.pin}</button>
+              <button onClick={saveEntry}>{t.save}</button>
             </div>
           </div>
 
-          {loading && <div className="loading">加载中...</div>}
+          {loading && <div className="loading">{t.loading}</div>}
 
-          {!loading && filtered.length === 0 && <div className="empty">暂无条目</div>}
+          {!loading && filtered.length === 0 && <div className="empty">{t.empty}</div>}
 
           {!loading && filtered.map(entry => (
             <EntryCard
@@ -463,6 +623,7 @@
               onDelete={deleteEntry}
               onPatch={patchEntry}
               onAnnotate={addAnnotation}
+              t={t}
             />
           ))}
 
@@ -471,7 +632,7 @@
       );
     }
 
-    function EntryCard({ entry, settings, onDelete, onPatch, onAnnotate }) {
+    function EntryCard({ entry, settings, onDelete, onPatch, onAnnotate, t }) {
       const [editing, setEditing] = useState(false);
       const [editContent, setEditContent] = useState(entry.content);
 
@@ -480,7 +641,7 @@
       }
 
       async function handleDelete() {
-        if (!confirm('删除这条条目？')) return;
+        if (!confirm(t.deleteConfirm)) return;
         await onDelete(entry.id);
       }
 
@@ -505,9 +666,9 @@
             <span className="entry-meta">#{entry.id} {new Date(entry.created_at).toLocaleDateString()}</span>
             {entry.author === 'user' && (
               <span className="entry-actions">
-                {!editing && <button onClick={() => { setEditing(true); setEditContent(entry.content); }}>编辑</button>}
-                <button onClick={handleDelete}>删除</button>
-                <button onClick={handlePin}>{entry.pinned ? '取消置顶' : '置顶'}</button>
+                {!editing && <button onClick={() => { setEditing(true); setEditContent(entry.content); }}>{t.edit}</button>}
+                <button onClick={handleDelete}>{t.delete}</button>
+                <button onClick={handlePin}>{entry.pinned ? t.unpin : t.pin}</button>
               </span>
             )}
           </div>
@@ -515,19 +676,19 @@
             <div>
               <textarea value={editContent} onChange={e => setEditContent(e.target.value)} />
               <div className="edit-actions">
-                <button className="primary" onClick={handleSaveEdit}>保存</button>
-                <button onClick={() => setEditing(false)}>取消</button>
+                <button className="primary" onClick={handleSaveEdit}>{t.save}</button>
+                <button onClick={() => setEditing(false)}>{t.cancel}</button>
               </div>
             </div>
           ) : (
             <div className="entry-content">{entry.content}</div>
           )}
-          <NoteSection entry={entry} settings={settings} onAnnotate={onAnnotate} />
+          <NoteSection entry={entry} settings={settings} onAnnotate={onAnnotate} t={t} />
         </div>
       );
     }
 
-    function NoteSection({ entry, settings, onAnnotate }) {
+    function NoteSection({ entry, settings, onAnnotate, t }) {
       const [expanded, setExpanded] = useState(false);
       const [annotations, setAnnotations] = useState([]);
       const [input, setInput] = useState('');
@@ -561,14 +722,14 @@
         <div className="annotation-section">
           {entry.annotation_count > 0 && (
             <button className="annotation-toggle" onClick={toggle}>
-              {entry.annotation_count} 条批注
+              {t.annotationsCount(entry.annotation_count)}
             </button>
           )}
           {expanded && (
             <div className="annotation-list">
               {annotations.map(a => (
                 <div key={a.id} className="annotation-bubble">
-                  <span className="annotation-author">
+                  <span className={`annotation-author annotation-author-${a.author}`}>
                     {a.author === 'ai' ? (settings?.ai_name || 'AI') : (settings?.user_name || 'User')}
                   </span>
                   <span className="annotation-content">{a.content}</span>
@@ -579,10 +740,10 @@
                 <input
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  placeholder="写批注..."
+                  placeholder={t.annotationPlaceholder}
                   onKeyDown={e => e.key === 'Enter' && submit()}
                 />
-                <button className="primary" onClick={submit}>保存</button>
+                <button className="primary" onClick={submit}>{t.save}</button>
               </div>
             </div>
           )}
@@ -591,10 +752,10 @@
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder="写批注..."
+                placeholder={t.annotationPlaceholder}
                 onKeyDown={e => e.key === 'Enter' && submit()}
               />
-              <button className="primary" onClick={submit}>保存</button>
+              <button className="primary" onClick={submit}>{t.save}</button>
             </div>
           )}
         </div>
@@ -604,5 +765,8 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
+  <style>
+    .annotation-author { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  </style>
 </body>
 </html>

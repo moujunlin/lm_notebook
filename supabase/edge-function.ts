@@ -39,9 +39,11 @@ async function handler(req: Request): Promise<Response> {
     return new Response(null, { status: 204, headers: CORS_HEADERS })
   }
 
-  const clientToken = req.headers.get('X-Notebook-Token') || ''
-  if (!TOKEN || !safeEqual(TOKEN, clientToken)) {
-    return json({ error: 'Unauthorized' }, 401)
+  if (TOKEN) {
+    const clientToken = req.headers.get('X-Notebook-Token') || ''
+    if (!safeEqual(TOKEN, clientToken)) {
+      return json({ error: 'Unauthorized' }, 401)
+    }
   }
 
   const url = new URL(req.url)
@@ -49,9 +51,13 @@ async function handler(req: Request): Promise<Response> {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
   if (path === '/notebook-api/entries' && req.method === 'GET') {
+    const includeAnnotations = url.searchParams.get('include') === 'annotations'
+    const selectClause = includeAnnotations
+      ? '*, annotations:notebook_annotations(*), annotation_count:notebook_annotations(count)'
+      : '*, annotation_count:notebook_annotations(count)'
     const { data, error } = await supabase
       .from('notebook_entries')
-      .select('*, annotation_count:notebook_annotations(count)')
+      .select(selectClause)
       .order('pinned', { ascending: false })
       .order('created_at', { ascending: false })
 
