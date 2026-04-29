@@ -1,0 +1,9 @@
+# Design docs and backlog
+notebook*.md
+backlog.md
+
+# Tests
+tests/
+
+# CLAUDE project metadata (not implementation code)
+CLAUDE.md
