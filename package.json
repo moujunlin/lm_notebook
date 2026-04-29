@@ -1,0 +1,10 @@
+{
+  "name": "lm-notebook-contract",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-isolation=none tests/contract/*.test.mjs tests/integration/*.test.mjs",
+    "test:contract": "node --test --test-isolation=none tests/contract/*.test.mjs",
+    "test:integration": "node --test --test-isolation=none tests/integration/*.test.mjs"
+  }
+}

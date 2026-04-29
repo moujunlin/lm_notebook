@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notebook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', 'JetBrains Mono', monospace;
+      background: linear-gradient(180deg, #0a0b0f 0%, #111318 100%);
+      color: #c8cdd8;
+      min-height: 100vh;
+    }
+    .app { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 2px; color: #4a5568; margin-bottom: 4px; }
+    header div { font-size: 13px; color: #6a8fba; margin-bottom: 2px; }
+    header div:last-child { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #4a5568; letter-spacing: 1px; }
+    .error-banner {
+      background: rgba(180, 80, 80, 0.15);
+      color: #d88;
+      border: 1px solid rgba(180, 80, 80, 0.25);
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filters button {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #4a5568;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .filters button.active { color: #c8cdd8; border-color: rgba(255,255,255,0.15); }
+    .new-entry {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.02);
+    }
+    .new-entry textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #c8cdd8;
+      font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 60px;
+      outline: none;
+    }
+    .new-entry-actions { display: flex; justify-content: space-between; margin-top: 8px; }
+    .new-entry-actions button {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #4a5568;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+    .new-entry-actions button:last-child { color: #b89a6a; }
+    .loading { text-align: center; padding: 40px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4a5568; letter-spacing: 1px; }
+    .empty { text-align: center; padding: 40px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4a5568; letter-spacing: 1px; }
+    .entry-card {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: rgba(255,255,255,0.02);
+    }
+    .entry-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+    .entry-author-ai { color: #6a8fba; }
+    .entry-author-user { color: #b89a6a; }
+    .entry-meta { color: #4a5568; margin-left: auto; }
+    .entry-actions { display: flex; gap: 6px; }
+    .entry-actions button {
+      background: transparent;
+      border: none;
+      color: #4a5568;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 2px 4px;
+    }
+    .entry-actions button:hover { color: #c8cdd8; }
+    .entry-content { font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+    .entry-card textarea {
+      width: 100%;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #c8cdd8;
+      font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+      font-size: 13px;
+      border-radius: 4px;
+      padding: 8px;
+      min-height: 60px;
+      resize: vertical;
+      outline: none;
+      margin-bottom: 8px;
+    }
+    .annotation-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); }
+    .annotation-toggle {
+      background: transparent;
+      border: none;
+      color: #4a5568;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      padding: 0;
+    }
+    .annotation-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .annotation-bubble {
+      background: rgba(255,255,255,0.03);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .annotation-author { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6a8fba; }
+    .annotation-content { color: #c8cdd8; line-height: 1.5; }
+    .annotation-time { font-size: 10px; color: #4a5568; }
+    .annotation-input-row { display: flex; gap: 8px; margin-top: 8px; }
+    .annotation-input-row input {
+      flex: 1;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #c8cdd8;
+      font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      outline: none;
+    }
+    .annotation-input-row button {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #4a5568;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+    footer { text-align: center; padding: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #4a5568; letter-spacing: 1px; }
+    .connect-page { max-width: 400px; margin: 80px auto; padding: 24px; text-align: center; }
+    .connect-page h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #4a5568; letter-spacing: 2px; margin-bottom: 24px; }
+    .connect-page input {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #c8cdd8;
+      padding: 10px 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      outline: none;
+    }
+    .connect-page button {
+      width: 100%;
+      background: rgba(106, 143, 186, 0.15);
+      border: 1px solid rgba(106, 143, 186, 0.25);
+      color: #6a8fba;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function getCredentials() {
+      const hash = window.location.hash.slice(1);
+      const [url, token] = hash.split('|');
+      return [url, token];
+    }
+
+    async function api(path, options = {}) {
+      const [baseUrl, token] = getCredentials();
+      if (!baseUrl || !token) throw new Error('Not connected');
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Notebook-Token': token
+      };
+      const res = await fetch(baseUrl + path, { ...options, headers });
+      if (res.status === 401) throw new Error('Unauthorized');
+      if (res.status === 403) throw new Error('Forbidden');
+      if (res.status === 400) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Bad request');
+      }
+      if (!res.ok) throw new Error('Request failed');
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    }
+
+    function App() {
+      const [hash, setHash] = useState(window.location.hash.slice(1));
+      const [entries, setEntries] = useState([]);
+      const [settings, setSettings] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [filter, setFilter] = useState('all');
+      const [newContent, setNewContent] = useState('');
+      const [newPinned, setNewPinned] = useState(false);
+      const [urlInput, setUrlInput] = useState('');
+      const [tokenInput, setTokenInput] = useState('');
+
+      useEffect(() => {
+        if (hash) loadAll();
+      }, [hash]);
+
+      async function loadAll() {
+        setLoading(true);
+        setError(null);
+        try {
+          const [entriesData, settingsData] = await Promise.all([
+            api('/entries'),
+            api('/settings')
+          ]);
+          setEntries(entriesData || []);
+          setSettings(settingsData);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      async function saveEntry() {
+        if (!newContent.trim()) return;
+        try {
+          await api('/entries', {
+            method: 'POST',
+            body: JSON.stringify({ content: newContent, pinned: newPinned })
+          });
+          setNewContent('');
+          setNewPinned(false);
+          await loadAll();
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function deleteEntry(id) {
+        try {
+          await api(`/entries/${id}`, { method: 'DELETE' });
+          await loadAll();
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function patchEntry(id, body) {
+        try {
+          await api(`/entries/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(body)
+          });
+          await loadAll();
+        } catch (e) {
+          setError(e.message);
+          throw e;
+        }
+      }
+
+      async function addAnnotation(id, content) {
+        try {
+          await api(`/entries/${id}/annotations`, {
+            method: 'POST',
+            body: JSON.stringify({ content })
+          });
+          await loadAll();
+        } catch (e) {
+          setError(e.message);
+        }
+      }
+
+      async function connect() {
+        const base = urlInput.replace(/\/$/, '');
+        const fullUrl = base.endsWith('/notebook-api') ? base : `${base}/functions/v1/notebook-api`;
+        try {
+          const res = await fetch(`${fullUrl}/entries`, {
+            headers: { 'X-Notebook-Token': tokenInput }
+          });
+          if (!res.ok) throw new Error('Check URL and token');
+          const hashValue = `${fullUrl}|${tokenInput}`;
+          window.location.hash = hashValue;
+          setHash(hashValue);
+        } catch (e) {
+          setError('Connection failed: ' + e.message);
+        }
+      }
+
+      const filtered = entries.filter(e => {
+        if (filter === 'pinned') return e.pinned;
+        if (filter === 'ai') return e.author === 'ai';
+        if (filter === 'user') return e.author === 'user';
+        return true;
+      });
+
+      if (!hash) {
+        return (
+          <div className="connect-page">
+            <h1>NOTEBOOK</h1>
+            {error && <div className="error-banner" onClick={() => setError(null)}>{error}</div>}
+            <input
+              placeholder="Supabase Project URL"
+              value={urlInput}
+              onChange={e => setUrlInput(e.target.value)}
+            />
+            <input
+              placeholder="API Token"
+              value={tokenInput}
+              onChange={e => setTokenInput(e.target.value)}
+            />
+            <button onClick={connect}>CONNECT</button>
+          </div>
+        );
+      }
+
+      return (
+        <div className="app">
+          <header>
+            <h1>NOTEBOOK</h1>
+            <div>{settings?.ai_name || 'AI'} × {settings?.user_name || 'User'}</div>
+            <div>STANDBY MEMORY BUFFER</div>
+          </header>
+
+          {error && <div className="error-banner" onClick={() => setError(null)}>{error}</div>}
+
+          <div className="filters">
+            <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>ALL</button>
+            <button className={filter === 'pinned' ? 'active' : ''} onClick={() => setFilter('pinned')}>📌</button>
+            <button className={filter === 'ai' ? 'active' : ''} onClick={() => setFilter('ai')}>AI</button>
+            <button className={filter === 'user' ? 'active' : ''} onClick={() => setFilter('user')}>USER</button>
+            <button onClick={loadAll}>↻</button>
+          </div>
+
+          <div className="new-entry">
+            <textarea
+              value={newContent}
+              onChange={e => setNewContent(e.target.value)}
+              placeholder="Write something..."
+            />
+            <div className="new-entry-actions">
+              <button onClick={() => setNewPinned(!newPinned)}>PIN</button>
+              <button onClick={saveEntry}>SAVE</button>
+            </div>
+          </div>
+
+          {loading && <div className="loading">LOADING...</div>}
+
+          {!loading && filtered.length === 0 && <div className="empty">NO ENTRIES</div>}
+
+          {!loading && filtered.map(entry => (
+            <EntryCard
+              key={entry.id}
+              entry={entry}
+              settings={settings}
+              onDelete={deleteEntry}
+              onPatch={patchEntry}
+              onAnnotate={addAnnotation}
+            />
+          ))}
+
+          <footer>NON-ARCHIVABLE</footer>
+        </div>
+      );
+    }
+
+    function EntryCard({ entry, settings, onDelete, onPatch, onAnnotate }) {
+      const [editing, setEditing] = useState(false);
+      const [editContent, setEditContent] = useState(entry.content);
+
+      async function handlePin() {
+        await onPatch(entry.id, { pinned: !entry.pinned });
+      }
+
+      async function handleDelete() {
+        if (!confirm('Delete this entry?')) return;
+        await onDelete(entry.id);
+      }
+
+      async function handleSaveEdit() {
+        try {
+          await onPatch(entry.id, { content: editContent });
+          setEditing(false);
+        } catch (e) {
+          // 保持 editing 状态，错误已由父组件显示
+        }
+      }
+
+      const authorName = entry.author === 'ai'
+        ? (settings?.ai_name || 'AI')
+        : (settings?.user_name || 'User');
+
+      return (
+        <div className="entry-card" style={entry.pinned ? { background: 'rgba(180,160,120,0.1)' } : {}}>
+          <div className="entry-header">
+            <span className={entry.author === 'ai' ? 'entry-author-ai' : 'entry-author-user'}>[{authorName}]</span>
+            {entry.pinned && <span>📌</span>}
+            <span className="entry-meta">#{entry.id} {new Date(entry.created_at).toLocaleDateString()}</span>
+            {entry.author === 'user' && (
+              <span className="entry-actions">
+                {!editing && <button onClick={() => { setEditing(true); setEditContent(entry.content); }}>EDIT</button>}
+                <button onClick={handleDelete}>DEL</button>
+                <button onClick={handlePin}>PIN</button>
+              </span>
+            )}
+          </div>
+          {editing ? (
+            <div>
+              <textarea value={editContent} onChange={e => setEditContent(e.target.value)} />
+              <div className="entry-actions">
+                <button onClick={handleSaveEdit}>SAVE</button>
+                <button onClick={() => setEditing(false)}>CANCEL</button>
+              </div>
+            </div>
+          ) : (
+            <div className="entry-content">{entry.content}</div>
+          )}
+          <NoteSection entry={entry} settings={settings} onAnnotate={onAnnotate} />
+        </div>
+      );
+    }
+
+    function NoteSection({ entry, settings, onAnnotate }) {
+      const [expanded, setExpanded] = useState(false);
+      const [annotations, setAnnotations] = useState(entry.annotations || []);
+      const [input, setInput] = useState('');
+
+      useEffect(() => {
+        if (entry.annotations) {
+          setAnnotations(entry.annotations);
+        }
+      }, [entry.id]);
+
+      async function toggle() {
+        const next = !expanded;
+        if (next && annotations.length === 0 && entry.annotation_count > 0) {
+          try {
+            const detail = await api(`/entries/${entry.id}`);
+            setAnnotations(detail.annotations || []);
+          } catch (e) {
+            // ignore
+          }
+        }
+        setExpanded(next);
+      }
+
+      async function submit() {
+        if (!input.trim()) return;
+        await onAnnotate(entry.id, input);
+        setInput('');
+        const wasEmpty = entry.annotation_count === 0;
+        if (wasEmpty) setExpanded(true);
+        try {
+          const detail = await api(`/entries/${entry.id}`);
+          setAnnotations(detail.annotations || []);
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      return (
+        <div className="annotation-section">
+          {entry.annotation_count > 0 && (
+            <button className="annotation-toggle" onClick={toggle}>
+              {entry.annotation_count} ANNOTATIONS
+            </button>
+          )}
+          {expanded && (
+            <div className="annotation-list">
+              {annotations.map(a => (
+                <div key={a.id} className="annotation-bubble">
+                  <span className="annotation-author">
+                    {a.author === 'ai' ? (settings?.ai_name || 'AI') : (settings?.user_name || 'User')}
+                  </span>
+                  <span className="annotation-content">{a.content}</span>
+                  <span className="annotation-time">{new Date(a.created_at).toLocaleString()}</span>
+                </div>
+              ))}
+              <div className="annotation-input-row">
+                <input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  placeholder="Add annotation..."
+                  onKeyDown={e => e.key === 'Enter' && submit()}
+                />
+                <button onClick={submit}>SAVE</button>
+              </div>
+            </div>
+          )}
+          {entry.annotation_count === 0 && (
+            <div className="annotation-input-row">
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Add annotation..."
+                onKeyDown={e => e.key === 'Enter' && submit()}
+              />
+              <button onClick={submit}>SAVE</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
