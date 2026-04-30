@@ -10,25 +10,26 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="colors_and_type.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Noto Sans SC', 'JetBrains Mono', monospace;
-      background: linear-gradient(180deg, #0a0b0f 0%, #111318 100%);
-      color: #c8cdd8;
+      background: var(--bg-app);
+      color: var(--fg-1);
       min-height: 100vh;
     }
     .app { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
     header { text-align: center; margin-bottom: 20px; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .header-top h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 2px; color: #4a5568; margin-bottom: 0; }
-    .header-top button { background: transparent; border: none; color: #7a8599; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-    header div { font-size: 13px; color: #6a8fba; margin-bottom: 2px; }
-    header div:last-child { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #4a5568; letter-spacing: 1px; }
+    .header-top h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 2px; color: var(--fg-3); margin-bottom: 0; }
+    .header-top button { background: transparent; border: none; color: var(--fg-2); cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    header div { font-size: 13px; color: var(--lori-blue); margin-bottom: 2px; }
+    header div:last-child { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--fg-3); letter-spacing: 1px; }
     .error-banner {
-      background: rgba(180, 80, 80, 0.15);
-      color: #d88;
-      border: 1px solid rgba(180, 80, 80, 0.25);
+      background: var(--err-bg);
+      color: var(--err-fg);
+      border: 1px solid var(--err-border);
       padding: 10px 14px;
       border-radius: 6px;
       margin-bottom: 16px;
@@ -37,9 +38,9 @@
     }
     .filters { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
     .filters button {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      color: #7a8599;
+      background: var(--surface-3);
+      border: 1px solid var(--border-low);
+      color: var(--fg-2);
       padding: 6px 12px;
       border-radius: 4px;
       cursor: pointer;
@@ -47,12 +48,16 @@
       font-size: 11px;
       letter-spacing: 0.5px;
     }
-    .filters button.active { color: #c8cdd8; border-color: rgba(255,255,255,0.15); }
+    .filters button.active {
+      color: var(--fg-1);
+      border-color: var(--border-high);
+      background: rgba(255, 255, 255, 0.08);
+    }
     .date-filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .date-filters button {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      color: #4a5568;
+      background: rgba(20, 22, 28, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--fg-2);
       padding: 6px 12px;
       border-radius: 4px;
       cursor: pointer;
@@ -60,12 +65,12 @@
       font-size: 10px;
       letter-spacing: 0.5px;
     }
-    .date-filters button.active { color: #c8cdd8; border-color: rgba(255,255,255,0.15); }
+    .date-filters button.active { color: var(--fg-1); border-color: var(--border-high); }
     .search-box {
       width: 100%;
-      background: rgba(0,0,0,0.2);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #c8cdd8;
+      background: var(--surface-input);
+      border: 1px solid var(--border-mid);
+      color: var(--fg-1);
       font-family: 'Noto Sans SC', 'JetBrains Mono', monospace;
       font-size: 13px;
       padding: 8px 12px;
@@ -74,17 +79,17 @@
       outline: none;
     }
     .new-entry {
-      border: 1px solid rgba(255,255,255,0.06);
+      border: 1px solid var(--border-low);
       border-radius: 6px;
       padding: 12px;
       margin-bottom: 16px;
-      background: rgba(255,255,255,0.02);
+      background: var(--surface-1);
     }
     .new-entry textarea {
       width: 100%;
       background: transparent;
       border: none;
-      color: #c8cdd8;
+      color: var(--fg-1);
       font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
       font-size: 13px;
       resize: vertical;
@@ -93,58 +98,58 @@
     }
     .new-entry-actions { display: flex; justify-content: space-between; margin-top: 8px; }
     .new-entry-actions button {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #4a5568;
+      background: var(--surface-4);
+      border: 1px solid var(--border-mid);
+      color: var(--fg-3);
       padding: 4px 10px;
       border-radius: 4px;
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
     }
-    .new-entry-actions button:last-child { color: #b89a6a; }
-    .loading { text-align: center; padding: 40px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4a5568; letter-spacing: 1px; }
-    .empty { text-align: center; padding: 40px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4a5568; letter-spacing: 1px; }
+    .new-entry-actions button:last-child { color: var(--maomao-pink); }
+    .loading { text-align: center; padding: 40px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--fg-3); letter-spacing: 1px; }
+    .empty { text-align: center; padding: 40px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--fg-3); letter-spacing: 1px; }
     .entry-card {
-      border: 1px solid rgba(255,255,255,0.06);
+      border: 1px solid var(--border-low);
       border-radius: 6px;
       padding: 14px;
       margin-bottom: 12px;
-      background: rgba(255,255,255,0.02);
+      background: var(--surface-1);
     }
     .entry-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
-    .entry-author-ai { color: #6a8fba; }
-    .entry-author-user { color: #b89a6a; }
-    .entry-meta { color: #4a5568; margin-left: auto; }
+    .entry-author-ai { color: var(--lori-blue); }
+    .entry-author-user { color: var(--maomao-pink); }
+    .entry-meta { color: var(--fg-3); margin-left: auto; }
     .entry-actions { display: flex; gap: 6px; }
     .entry-actions button {
       background: transparent;
       border: none;
-      color: #4a5568;
+      color: var(--fg-3);
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       padding: 4px 8px;
     }
-    .entry-actions button:hover { color: #c8cdd8; }
+    .entry-actions button:hover { color: var(--fg-1); }
     .edit-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
     .edit-actions button {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #7a8599;
+      background: var(--surface-4);
+      border: 1px solid var(--border-mid);
+      color: var(--fg-2);
       padding: 4px 10px;
       border-radius: 4px;
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
     }
-    .edit-actions button.primary { color: #b89a6a; }
+    .edit-actions button.primary { color: var(--maomao-pink); }
     .entry-content { font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
     .entry-card textarea {
       width: 100%;
-      background: rgba(0,0,0,0.2);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #c8cdd8;
+      background: var(--surface-input);
+      border: 1px solid var(--border-mid);
+      color: var(--fg-1);
       font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
       font-size: 13px;
       border-radius: 4px;
@@ -154,11 +159,11 @@
       outline: none;
       margin-bottom: 8px;
     }
-    .annotation-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); }
+    .annotation-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-faint); }
     .annotation-toggle {
       background: transparent;
       border: none;
-      color: #4a5568;
+      color: var(--fg-3);
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
       font-size: 10px;
@@ -167,7 +172,7 @@
     }
     .annotation-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
     .annotation-bubble {
-      background: rgba(255,255,255,0.03);
+      background: var(--surface-2);
       border-radius: 4px;
       padding: 8px 10px;
       font-size: 12px;
@@ -175,16 +180,16 @@
       flex-direction: column;
       gap: 2px;
     }
-    .annotation-author-ai { color: #6a8fba; }
-    .annotation-author-user { color: #b89a6a; }
-    .annotation-content { color: #c8cdd8; line-height: 1.5; }
-    .annotation-time { font-size: 10px; color: #4a5568; }
+    .annotation-author-ai { color: var(--lori-blue); }
+    .annotation-author-user { color: var(--maomao-pink); }
+    .annotation-content { color: var(--fg-1); line-height: 1.5; }
+    .annotation-time { font-size: 10px; color: var(--fg-3); }
     .annotation-input-row { display: flex; gap: 8px; margin-top: 8px; }
     .annotation-input-row input {
       flex: 1;
-      background: rgba(0,0,0,0.2);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #c8cdd8;
+      background: var(--surface-2);
+      border: 1px solid var(--border-mid);
+      color: var(--fg-1);
       font-family: 'JetBrains Mono', 'Noto Sans SC', monospace;
       font-size: 12px;
       padding: 6px 10px;
@@ -192,24 +197,24 @@
       outline: none;
     }
     .annotation-input-row button {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #4a5568;
+      background: var(--surface-4);
+      border: 1px solid var(--border-mid);
+      color: var(--fg-3);
       padding: 4px 10px;
       border-radius: 4px;
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
     }
-    .annotation-input-row button.primary { color: #b89a6a; }
-    footer { text-align: center; padding: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #4a5568; letter-spacing: 1px; }
+    .annotation-input-row button.primary { color: var(--maomao-pink); }
+    footer { text-align: center; padding: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--fg-3); letter-spacing: 1px; }
     .connect-page { max-width: 400px; margin: 80px auto; padding: 24px; text-align: center; }
-    .connect-page h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #4a5568; letter-spacing: 2px; margin-bottom: 24px; }
+    .connect-page h1 { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--fg-3); letter-spacing: 2px; margin-bottom: 24px; }
     .connect-page input {
       width: 100%;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #c8cdd8;
+      background: var(--surface-2);
+      border: 1px solid var(--border-mid);
+      color: var(--fg-1);
       padding: 10px 12px;
       border-radius: 4px;
       margin-bottom: 12px;
@@ -219,9 +224,9 @@
     }
     .connect-page button {
       width: 100%;
-      background: rgba(106, 143, 186, 0.15);
-      border: 1px solid rgba(106, 143, 186, 0.25);
-      color: #6a8fba;
+      background: var(--lori-blue-bg);
+      border: 1px solid var(--lori-blue-border);
+      color: var(--lori-blue);
       padding: 10px;
       border-radius: 4px;
       cursor: pointer;
@@ -231,7 +236,7 @@
     }
     .connect-page .hint {
       font-size: 11px;
-      color: #4a5568;
+      color: var(--fg-3);
       text-align: left;
       margin-top: -8px;
       margin-bottom: 12px;
@@ -239,14 +244,14 @@
     .lang-toggle { display: inline-flex; align-items: center; gap: 4px; }
     .lang-toggle button {
       background: transparent; border: none;
-      color: #4a5568;
+      color: var(--fg-3);
       cursor: pointer;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       padding: 2px 4px;
     }
-    .lang-toggle button.active { color: #c8cdd8; }
-    .lang-divider { color: #4a5568; font-size: 11px; }
+    .lang-toggle button.active { color: var(--fg-1); }
+    .lang-divider { color: var(--fg-3); font-size: 11px; }
     @media (max-width: 600px) {
       .entry-actions button { padding: 6px 10px; font-size: 12px; }
       .filters button { padding: 8px 14px; }
@@ -262,7 +267,8 @@
     }
   </style>
 </head>
-<body>
+<body class="ds-app">
+  <div class="ds-seed-field" aria-hidden="true"></div>
   <div id="root">
     <div style="text-align: center; padding: 80px 20px; color: #4a5568;
                 font-family: 'JetBrains Mono', monospace; font-size: 11px;
@@ -568,7 +574,15 @@
                   <button className={lang === 'zh' ? 'active' : ''} onClick={() => setLang('zh')}>中文</button>
                 </div>
                 <button title={t.refreshTooltip} onClick={loadAll}>↻</button>
-                <button title={t.exportTooltip} onClick={exportMarkdown}>⬇</button>
+                <button title={t.exportTooltip} onClick={exportMarkdown} aria-label={t.exportTooltip}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                       stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+                       style={{display:'block'}}>
+                    <path d="M7 1.5 V10"/>
+                    <path d="M3.5 6.5 L7 10 L10.5 6.5"/>
+                    <path d="M2 12.5 H12"/>
+                  </svg>
+                </button>
               </div>
             </div>
             <div>{settings?.ai_name || 'AI'} × {settings?.user_name || 'User'}</div>
@@ -579,7 +593,7 @@
 
           <div className="filters">
             <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>{t.all}</button>
-            <button className={filter === 'pinned' ? 'active' : ''} onClick={() => setFilter('pinned')}>📌</button>
+            <button className={filter === 'pinned' ? 'active' : ''} onClick={() => setFilter('pinned')}>❋</button>
             <button className={filter === 'ai' ? 'active' : ''} onClick={() => setFilter('ai')}>{settings?.ai_name || 'AI'}</button>
             <button className={filter === 'user' ? 'active' : ''} onClick={() => setFilter('user')}>{settings?.user_name || 'User'}</button>
           </div>
@@ -659,10 +673,10 @@
         : (settings?.user_name || 'User');
 
       return (
-        <div className="entry-card" style={entry.pinned ? { background: 'rgba(180,160,120,0.1)' } : {}}>
+        <div className="entry-card" style={entry.pinned ? { background: 'var(--surface-pinned)' } : {}}>
           <div className="entry-header">
             <span className={entry.author === 'ai' ? 'entry-author-ai' : 'entry-author-user'}>[{authorName}]</span>
-            {entry.pinned && <span>📌</span>}
+            {entry.pinned && <span>❋</span>}
             <span className="entry-meta">#{entry.id} {new Date(entry.created_at).toLocaleDateString()}</span>
             {entry.author === 'user' && (
               <span className="entry-actions">

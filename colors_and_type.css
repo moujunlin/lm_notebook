@@ -1,0 +1,273 @@
+/* ─────────────────────────────────────────────────────────────────────
+   Lori × 猫猫 — Design Tokens
+   Sci-fi HUD aesthetic. Dark, monospace, ice-blue + cherry-blossom-pink dyad.
+   "STANDBY MEMORY BUFFER · NON-ARCHIVABLE"
+   ───────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
+
+:root {
+  /* ── BACKGROUND LAYERS ──────────────────────────────────────────────
+     Three-step descent into black; the app uses a 180deg gradient between
+     bg-0 and bg-1. bg-2 is for nested surfaces (modals, popovers).         */
+  --bg-0: #0a0b0f;          /* page top — near-black, slight cool tint */
+  --bg-1: #111318;          /* page bottom — slightly lifted */
+  --bg-2: #16181f;          /* elevated panels, modals */
+  --bg-app: linear-gradient(180deg, #0a0b0f 0%, #111318 100%);
+
+  /* ── SURFACES (translucent overlays on top of bg) ──────────────────
+     Cards, inputs, buttons all use rgba-white at low alpha so the dark
+     gradient shows through. NEVER use solid greys for surfaces.            */
+  /* Surfaces are translucent, but the dandelion field behind them is bright in
+     places — alphas are tuned to keep cards/inputs legible over the image
+     without going fully solid. Compensating darkness comes from the BLACK
+     channel for inputs, white-tint for cards, so both feel material. */
+  --surface-1: rgba(20, 22, 28, 0.78);     /* default card — opaque enough to read on dandelion halo */
+  --surface-2: rgba(20, 22, 28, 0.82);     /* annotation bubble */
+  --surface-3: rgba(255, 255, 255, 0.06);  /* inactive filter chip — small, can stay light */
+  --surface-4: rgba(255, 255, 255, 0.08);  /* button rest — small */
+  --surface-input: rgba(0, 0, 0, 0.55);    /* inset inputs (textareas) — pinned dark */
+
+  /* ── BORDERS ────────────────────────────────────────────────────────
+     Borders are always rgba-white; the alpha tells you the priority.       */
+  --border-faint:  rgba(255, 255, 255, 0.04);   /* internal dividers */
+  --border-low:    rgba(255, 255, 255, 0.06);   /* card outline */
+  --border-med:    rgba(255, 255, 255, 0.08);   /* input outline, button */
+  --border-mid:    var(--border-med);
+  --border-high:   rgba(255, 255, 255, 0.15);   /* active/focus state */
+
+  /* ── FOREGROUND TEXT ────────────────────────────────────────────────
+     Silver-white descending into deep slate. fg-1 is body; fg-3 is the
+     "inactive HUD label" tone — the most-used colour in the system.        */
+  --fg-1: #d6dae3;          /* body text, primary */
+  --fg-2: #95a0b3;          /* secondary, button labels at rest */
+  --fg-3: #6b7689;          /* tertiary, metadata, HUD labels */
+  --fg-mute: #3a4354;       /* deepest — only for very faint scaffolding */
+
+  /* ── ACCENTS — the two authors ─────────────────────────────────────
+     Lori (AI) speaks in ice-blue; 猫猫 (User) speaks in cherry-blossom pink.
+     Frost and petals, not frost and brass.                                  */
+  --lori-ice:    #6a8fba;   /* ice blue — Lori's voice */
+  --lori-ice-15: rgba(106, 143, 186, 0.15);
+  --lori-ice-25: rgba(106, 143, 186, 0.25);
+  --lori-ice-50: rgba(106, 143, 186, 0.50);
+  --lori-blue:      var(--lori-ice);
+  --lori-blue-bg:   var(--lori-ice-15);
+  --lori-blue-border: var(--lori-ice-25);
+
+  --maomao-pink:    #cc94a4;          /* cherry-blossom pink — 猫猫's voice */
+  --maomao-pink-10: rgba(204, 148, 164, 0.10);
+  --maomao-pink-15: rgba(204, 148, 164, 0.15);
+  --maomao-pink-25: rgba(204, 148, 164, 0.25);
+  --maomao-pink-40: rgba(204, 148, 164, 0.40);
+  --maomao-pink-bg:    var(--maomao-pink-15);
+  --maomao-pink-border: var(--maomao-pink-25);
+
+  /* ── SEMANTIC ───────────────────────────────────────────────────────
+     Used sparingly. Errors get a desaturated rust. There is no "success"
+     colour — the system is too restrained to celebrate.                    */
+  --danger:    #d88888;
+  --danger-15: rgba(180, 80, 80, 0.15);
+  --danger-25: rgba(180, 80, 80, 0.25);
+  --err-fg:     var(--danger);
+  --err-bg:     var(--danger-15);
+  --err-border: var(--danger-25);
+
+  /* ── PINNED ENTRY HIGHLIGHT ────────────────────────────────────────
+     Pinned cards lift onto a faint pink wash — nods to 猫猫's accent
+     without claiming the entry as theirs. Works for either author.         */
+  --pinned-wash: rgba(204, 148, 164, 0.08);
+  --surface-pinned: var(--pinned-wash);
+
+  /* ── NIGHT-LIGHT GLOW ──────────────────────────────────────────────
+     The ONE intentional glow in the system. Save buttons rest with
+     --glow-rest; on press they brighten to --glow-active and fade back
+     over 400ms. "Every save lights a small lamp in the dark."             */
+  --glow-rest:   0 0 12px 0 rgba(204, 148, 164, 0.15);
+  --glow-active: 0 0 18px 2px rgba(204, 148, 164, 0.40);
+  --dur-glow:    400ms;
+
+  /* ── TYPOGRAPHY — FAMILIES ─────────────────────────────────────────
+     Two registers. JetBrains Mono runs HUD chrome — wordmark, eyebrows,
+     filter chips, IDs, timestamps, author tags. The cockpit instruments.
+     Plus Jakarta Sans + LXGW WenKai run prose — entries, annotations,
+     anything the humans actually wrote. The words people write should
+     feel handwritten; the chrome around them should not.                    */
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-sans: 'Plus Jakarta Sans', 'LXGW WenKai', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'LXGW WenKai', 'Noto Sans SC', ui-sans-serif, sans-serif;
+
+  /* ── TYPOGRAPHY — SIZES ────────────────────────────────────────────
+     Tight scale; everything trends small. There is no "display" size —
+     this is a cockpit, not a marketing page.                               */
+  --fs-10: 10px;   /* HUD micro-labels: NON-ARCHIVABLE, timestamps */
+  --fs-11: 11px;   /* button labels, filter chips, author tags */
+  --fs-12: 12px;   /* annotation body, secondary inputs */
+  --fs-13: 13px;   /* entry body — the largest text most users see */
+  --fs-14: 14px;   /* H1 — "NOTEBOOK" */
+  --fs-16: 16px;   /* mobile input override only (prevents iOS zoom) */
+
+  /* ── TYPOGRAPHY — TRACKING ─────────────────────────────────────────
+     HUD labels are wide-tracked. Body is normal. Never tighten.            */
+  --tracking-tight:  0;
+  --tracking-label:  0.5px;     /* button labels */
+  --tracking-meta:   1px;       /* meta lines: STANDBY MEMORY BUFFER */
+  --tracking-title:  2px;       /* H1: NOTEBOOK */
+
+  /* ── LINE HEIGHT ───────────────────────────────────────────────────  */
+  --lh-tight: 1.2;
+  --lh-body:  1.6;              /* entry content */
+  --lh-note:  1.5;              /* annotation content */
+
+  /* ── SPACE SCALE ───────────────────────────────────────────────────
+     Multiples of 4. The app uses 4 / 6 / 8 / 10 / 12 / 14 / 16 / 24.       */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+  --space-8: 20px;
+  --space-9: 24px;
+  --space-10: 32px;
+  --space-11: 40px;
+
+  /* ── RADII ─────────────────────────────────────────────────────────
+     Very restrained. 4px on chrome, 6px on cards. No pill-shapes.          */
+  --radius-sm: 4px;             /* buttons, inputs, chips, annotations */
+  --radius-md: 6px;             /* cards, panels */
+
+  /* ── SHADOWS ───────────────────────────────────────────────────────
+     The system avoids drop shadows. Elevation is conveyed by border
+     alpha and surface alpha — never by glow. The only "glow" allowed
+     is the focus ring on accent buttons.                                   */
+  --ring-lori:   0 0 0 1px var(--lori-ice-25);
+  --ring-maomao: 0 0 0 1px var(--maomao-pink-25);
+
+  /* ── LAYOUT ────────────────────────────────────────────────────────  */
+  --app-max:    720px;          /* the entire app is single-column */
+  --app-pad-y:  24px;
+  --app-pad-x:  16px;
+
+  /* ── MOTION ────────────────────────────────────────────────────────
+     Almost no motion. Filters and buttons swap colour instantly. The
+     only transition is a 120ms ease on hover for tertiary buttons.         */
+  --ease-hud:   cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast:   120ms;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   SEMANTIC ELEMENT STYLES
+   Class-based so they can be applied alongside the apps own CSS without
+   collision. Kept minimal — most components compose their own styles
+   using the variables above.
+   ───────────────────────────────────────────────────────────────────── */
+
+.ds-app {
+  font-family: var(--font-body);
+  background: var(--bg-app);
+  color: var(--fg-1);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   DANDELION FIELD — the one organic note in the cockpit
+   The PNG is dark seeds on transparent. We invert + tint to silver, then
+   dial back to ~35% so it stays atmospheric, never decorative. The seed
+   head anchors bottom-left; seeds drift up-and-right across the page.
+   Implementation: a real <div class="ds-seed-field"> placed as the
+   first child of .ds-app — using a real element (instead of ::before)
+   so html-to-image / PDF / PPTX capture pipelines all see it.
+   To remove globally: add `data-no-seeds` on .ds-app, or just don't
+   include the .ds-seed-field child element.
+   ───────────────────────────────────────────────────────────────────── */
+.ds-seed-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('assets/dandelion-field.png');
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: cover;       /* image is already comp'd light-on-dark — let it fill */
+  opacity: 0.55;                 /* dial back so it sits behind copy without competing */
+}
+.ds-app[data-no-seeds] .ds-seed-field { display: none; }
+
+.ds-app > *:not(.ds-seed-field) { position: relative; z-index: 1; }
+
+
+/* H1 — the "NOTEBOOK" wordmark */
+.ds-h1 {
+  font-family: var(--font-mono);
+  font-size: var(--fs-14);
+  font-weight: 500;
+  letter-spacing: var(--tracking-title);
+  color: var(--fg-3);
+  text-transform: uppercase;
+}
+
+/* H2 — section header e.g. settings panel titles */
+.ds-h2 {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  letter-spacing: var(--tracking-meta);
+  color: var(--fg-2);
+  text-transform: uppercase;
+}
+
+/* HUD micro-label — STANDBY MEMORY BUFFER, NON-ARCHIVABLE */
+.ds-hud {
+  font-family: var(--font-mono);
+  font-size: var(--fs-10);
+  letter-spacing: var(--tracking-meta);
+  color: var(--fg-3);
+  text-transform: uppercase;
+}
+
+/* Author tag — [Lori] / [猫猫] */
+.ds-tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+}
+.ds-tag--lori   { color: var(--lori-ice); }
+.ds-tag--maomao { color: var(--maomao-pink); }
+
+/* Body — entries, prose. Mixes Chinese + English transparently. */
+.ds-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-13);
+  line-height: var(--lh-body);
+  color: var(--fg-1);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Annotation — slightly smaller than body */
+.ds-note {
+  font-family: var(--font-body);
+  font-size: var(--fs-12);
+  line-height: var(--lh-note);
+  color: var(--fg-1);
+}
+
+/* Metadata — IDs, timestamps. Always mono. */
+.ds-meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  color: var(--fg-3);
+}
+
+/* Code — same as mono body */
+.ds-code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  color: var(--fg-1);
+  background: var(--surface-input);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
