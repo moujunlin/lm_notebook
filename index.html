@@ -341,7 +341,8 @@
       }
       if (!res.ok) throw new Error('Request failed');
       const text = await res.text();
-      return text ? JSON.parse(text) : null;
+      const parsed = text ? JSON.parse(text) : null;
+      return parsed && parsed._context !== undefined ? parsed.data : parsed;
     }
 
     const VALID_DATE_FILTERS = ['all', 'today', '3d', '7d', '30d'];

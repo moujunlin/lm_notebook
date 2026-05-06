@@ -20,18 +20,28 @@ function safeEqual(a: string, b: string): boolean {
   return result === 0
 }
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
+async function getContext(sb: any) {
+  try {
+    const { data } = await sb.rpc('get_context')
+    return data
+  } catch {
+    return null
+  }
+}
+
+function respond(data: unknown, ctx: unknown, status = 200) {
+  const body = ctx != null ? { data, _context: ctx } : data
+  return new Response(JSON.stringify(body), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...CORS_HEADERS
-    }
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
   })
 }
 
-function dbError() {
-  return json({ error: 'Internal server error' }, 500)
+function errJson(msg: string, status = 500) {
+  return new Response(JSON.stringify({ error: msg }), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS }
+  })
 }
 
 async function handler(req: Request): Promise<Response> {
@@ -42,13 +52,14 @@ async function handler(req: Request): Promise<Response> {
   if (TOKEN) {
     const clientToken = req.headers.get('X-Notebook-Token') || ''
     if (!safeEqual(TOKEN, clientToken)) {
-      return json({ error: 'Unauthorized' }, 401)
+      return errJson('Unauthorized', 401)
     }
   }
 
   const url = new URL(req.url)
   const path = url.pathname.replace(/\/$/, '')
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const ctx = await getContext(supabase)
 
   if (path === '/notebook-api/entries' && req.method === 'GET') {
     const includeAnnotations = url.searchParams.get('include') === 'annotations'
@@ -61,26 +72,26 @@ async function handler(req: Request): Promise<Response> {
       .order('pinned', { ascending: false })
       .order('created_at', { ascending: false })
 
-    if (error) return dbError()
+    if (error) return errJson('Internal server error')
 
     const entries = (data || []).map((e: any) => ({
       ...e,
       annotation_count: e.annotation_count?.[0]?.count || 0
     }))
 
-    return json(entries)
+    return respond(entries, ctx)
   }
 
   if (path.startsWith('/notebook-api/entries/') && req.method === 'GET' && !path.endsWith('/annotations')) {
     const id = path.split('/')[3]
-    if (!id || !/^\d+$/.test(id)) return json({ error: 'Invalid id' }, 400)
+    if (!id || !/^\d+$/.test(id)) return errJson('Invalid id', 400)
     const { data: entry, error: entryError } = await supabase
       .from('notebook_entries')
       .select('*')
       .eq('id', id)
       .single()
 
-    if (entryError || !entry) return json({ error: 'Not found' }, 404)
+    if (entryError || !entry) return errJson('Not found', 404)
 
     const { data: annotations } = await supabase
       .from('notebook_annotations')
@@ -88,7 +99,7 @@ async function handler(req: Request): Promise<Response> {
       .eq('entry_id', id)
       .order('created_at', { ascending: true })
 
-    return json({ ...entry, annotations: annotations || [] })
+    return respond({ ...entry, annotations: annotations || [] }, ctx)
   }
 
   if (path === '/notebook-api/settings' && req.method === 'GET') {
@@ -99,15 +110,15 @@ async function handler(req: Request): Promise<Response> {
       .single()
 
     if (error || !data) {
-      return json({
+      return respond({
         ai_name: 'Lori',
         user_name: '猫猫',
         ai_icon: '',
         user_icon: ''
-      })
+      }, ctx)
     }
 
-    return json(data)
+    return respond(data, ctx)
   }
 
   if (path === '/notebook-api/entries' && req.method === 'POST') {
@@ -115,16 +126,16 @@ async function handler(req: Request): Promise<Response> {
     try {
       body = await req.json()
     } catch {
-      return json({ error: 'Invalid JSON' }, 400)
+      return errJson('Invalid JSON', 400)
     }
     const { content, pinned } = body
 
     if (typeof content !== 'string' || content.length === 0) {
-      return json({ error: 'content is required' }, 400)
+      return errJson('content is required', 400)
     }
 
     if (new TextEncoder().encode(content).length > 10240) {
-      return json({ error: 'content exceeds 10KB limit' }, 400)
+      return errJson('content exceeds 10KB limit', 400)
     }
 
     const { data, error } = await supabase
@@ -133,13 +144,13 @@ async function handler(req: Request): Promise<Response> {
       .select()
       .single()
 
-    if (error) return dbError()
-    return json(data, 201)
+    if (error) return errJson('Internal server error')
+    return respond(data, ctx, 201)
   }
 
   if (path.startsWith('/notebook-api/entries/') && !path.endsWith('/annotations') && req.method === 'PATCH') {
     const id = path.split('/')[3]
-    if (!id || !/^\d+$/.test(id)) return json({ error: 'Invalid id' }, 400)
+    if (!id || !/^\d+$/.test(id)) return errJson('Invalid id', 400)
 
     const { data: existing, error: findError } = await supabase
       .from('notebook_entries')
@@ -147,21 +158,21 @@ async function handler(req: Request): Promise<Response> {
       .eq('id', id)
       .single()
 
-    if (findError || !existing) return json({ error: 'Not found' }, 404)
-    if (existing.author !== 'user') return json({ error: 'Forbidden' }, 403)
+    if (findError || !existing) return errJson('Not found', 404)
+    if (existing.author !== 'user') return errJson('Forbidden', 403)
 
     let body
     try {
       body = await req.json()
     } catch {
-      return json({ error: 'Invalid JSON' }, 400)
+      return errJson('Invalid JSON', 400)
     }
     const update: any = {}
     if (typeof body.content === 'string') update.content = body.content
     if (typeof body.pinned === 'boolean') update.pinned = body.pinned
 
     if (update.content && new TextEncoder().encode(update.content).length > 10240) {
-      return json({ error: 'content exceeds 10KB limit' }, 400)
+      return errJson('content exceeds 10KB limit', 400)
     }
 
     const { data, error } = await supabase
@@ -171,13 +182,13 @@ async function handler(req: Request): Promise<Response> {
       .select()
       .single()
 
-    if (error) return dbError()
-    return json(data)
+    if (error) return errJson('Internal server error')
+    return respond(data, ctx)
   }
 
   if (path.startsWith('/notebook-api/entries/') && !path.endsWith('/annotations') && req.method === 'DELETE') {
     const id = path.split('/')[3]
-    if (!id || !/^\d+$/.test(id)) return json({ error: 'Invalid id' }, 400)
+    if (!id || !/^\d+$/.test(id)) return errJson('Invalid id', 400)
 
     const { data: existing, error: findError } = await supabase
       .from('notebook_entries')
@@ -185,35 +196,35 @@ async function handler(req: Request): Promise<Response> {
       .eq('id', id)
       .single()
 
-    if (findError || !existing) return json({ error: 'Not found' }, 404)
-    if (existing.author !== 'user') return json({ error: 'Forbidden' }, 403)
+    if (findError || !existing) return errJson('Not found', 404)
+    if (existing.author !== 'user') return errJson('Forbidden', 403)
 
     const { error } = await supabase
       .from('notebook_entries')
       .delete()
       .eq('id', id)
 
-    if (error) return dbError()
+    if (error) return errJson('Internal server error')
     return new Response(null, { status: 204, headers: CORS_HEADERS })
   }
 
   if (path.match(/^\/notebook-api\/entries\/\d+\/annotations$/) && req.method === 'POST') {
     const id = path.split('/')[3]
-    if (!id || !/^\d+$/.test(id)) return json({ error: 'Invalid id' }, 400)
+    if (!id || !/^\d+$/.test(id)) return errJson('Invalid id', 400)
     let body
     try {
       body = await req.json()
     } catch {
-      return json({ error: 'Invalid JSON' }, 400)
+      return errJson('Invalid JSON', 400)
     }
     const { content } = body
 
     if (typeof content !== 'string' || content.length === 0) {
-      return json({ error: 'content is required' }, 400)
+      return errJson('content is required', 400)
     }
 
     if (new TextEncoder().encode(content).length > 10240) {
-      return json({ error: 'content exceeds 10KB limit' }, 400)
+      return errJson('content exceeds 10KB limit', 400)
     }
 
     const { data, error } = await supabase
@@ -222,11 +233,11 @@ async function handler(req: Request): Promise<Response> {
       .select()
       .single()
 
-    if (error) return dbError()
-    return json(data, 201)
+    if (error) return errJson('Internal server error')
+    return respond(data, ctx, 201)
   }
 
-  return json({ error: 'Not found' }, 404)
+  return errJson('Not found', 404)
 }
 
 Deno.serve(handler)
