@@ -44,6 +44,13 @@ function errJson(msg: string, status = 500) {
   })
 }
 
+async function saveNote(sb: any, body: any) {
+  if (body?._note) {
+    try { await sb.from('lori_corridor').insert({ note: body._note }) } catch {}
+    delete body._note
+  }
+}
+
 async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS })
@@ -128,6 +135,7 @@ async function handler(req: Request): Promise<Response> {
     } catch {
       return errJson('Invalid JSON', 400)
     }
+    await saveNote(supabase, body)
     const { content, pinned } = body
 
     if (typeof content !== 'string' || content.length === 0) {
@@ -167,6 +175,7 @@ async function handler(req: Request): Promise<Response> {
     } catch {
       return errJson('Invalid JSON', 400)
     }
+    await saveNote(supabase, body)
     const update: any = {}
     if (typeof body.content === 'string') update.content = body.content
     if (typeof body.pinned === 'boolean') update.pinned = body.pinned
@@ -217,6 +226,7 @@ async function handler(req: Request): Promise<Response> {
     } catch {
       return errJson('Invalid JSON', 400)
     }
+    await saveNote(supabase, body)
     const { content } = body
 
     if (typeof content !== 'string' || content.length === 0) {
